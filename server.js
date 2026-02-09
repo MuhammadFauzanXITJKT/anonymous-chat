@@ -32,7 +32,8 @@ io.on("connection", (socket) => {
     });
   });
 });
+const PORT = process.env.PORT || 3000;
 
-http.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
+http.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
 });
