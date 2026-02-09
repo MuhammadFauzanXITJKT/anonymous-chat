@@ -5,35 +5,54 @@ const io = require("socket.io")(http);
 
 app.use(express.static("public"));
 
-function randomName() {
-  return "User" + Math.floor(Math.random() * 9999);
-}
+const rooms = {}; // Simpan room & password
 
 io.on("connection", (socket) => {
-  const username = randomName();
-  socket.username = username;
 
-  socket.broadcast.emit("message", {
-    user: "SYSTEM",
-    text: username + " joined the chat"
+  socket.on("joinRoom", ({ roomName, password, username }) => {
+
+    // Kalau room belum ada → buat baru
+    if (!rooms[roomName]) {
+      rooms[roomName] = password;
+    }
+
+    // Cek password
+    if (rooms[roomName] !== password) {
+      socket.emit("errorMessage", "Password salah!");
+      return;
+    }
+
+    socket.join(roomName);
+    socket.room = roomName;
+    socket.username = username || "Anonymous";
+
+    io.to(roomName).emit("message", {
+      user: "SYSTEM",
+      text: socket.username + " joined the room"
+    });
   });
 
   socket.on("chatMessage", (msg) => {
-    io.emit("message", {
+    if (!socket.room) return;
+
+    io.to(socket.room).emit("message", {
       user: socket.username,
       text: msg
     });
   });
 
   socket.on("disconnect", () => {
-    io.emit("message", {
-      user: "SYSTEM",
-      text: username + " left the chat"
-    });
+    if (socket.room) {
+      io.to(socket.room).emit("message", {
+        user: "SYSTEM",
+        text: socket.username + " left the room"
+      });
+    }
   });
-});
-const PORT = process.env.PORT || 3000;
 
+});
+
+const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });

@@ -1,57 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Anonymous Chat</title>
+  <title>Private Room Chat</title>
   <style>
-    body {
-      background: #111;
-      color: white;
-      font-family: Arial;
-      text-align: center;
-    }
-
-    #chat {
-      height: 400px;
-      overflow-y: scroll;
-      border: 1px solid #444;
-      margin: 20px auto;
-      width: 80%;
-      padding: 10px;
-      background: #1e1e1e;
-    }
-
-    input {
-      width: 60%;
-      padding: 10px;
-    }
-
-    button {
-      padding: 10px;
-      background: limegreen;
-      border: none;
-      cursor: pointer;
-    }
+    body { background:#111; color:white; text-align:center; font-family:Arial; }
+    #chat { height:300px; overflow-y:scroll; border:1px solid #444; margin:10px auto; width:80%; padding:10px; }
+    input { padding:8px; margin:5px; }
+    button { padding:8px; cursor:pointer; }
   </style>
 </head>
 <body>
 
-<h1>💬 Anonymous Chat Room</h1>
+<h1>🔒 Private Room Chat</h1>
 
-<div id="chat"></div>
+<div id="joinBox">
+  <input id="username" placeholder="Username" />
+  <input id="room" placeholder="Room Name" />
+  <input id="password" placeholder="Password" type="password" />
+  <button onclick="joinRoom()">Join Room</button>
+</div>
 
-<input id="msg" placeholder="Type message..." />
-<button onclick="send()">Send</button>
+<div id="chatUI" style="display:none;">
+  <div id="chat"></div>
+  <input id="msg" placeholder="Message..." />
+  <button onclick="send()">Send</button>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
 const chat = document.getElementById("chat");
 
+function joinRoom() {
+  const username = document.getElementById("username").value;
+  const room = document.getElementById("room").value;
+  const password = document.getElementById("password").value;
+
+  socket.emit("joinRoom", { roomName: room, password, username });
+
+  document.getElementById("joinBox").style.display = "none";
+  document.getElementById("chatUI").style.display = "block";
+}
+
 socket.on("message", (data) => {
   const div = document.createElement("div");
   div.innerHTML = "<b>" + data.user + ":</b> " + data.text;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+});
+
+socket.on("errorMessage", (msg) => {
+  alert(msg);
+  location.reload();
 });
 
 function send() {
